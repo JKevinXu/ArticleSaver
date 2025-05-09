@@ -1,4 +1,9 @@
-import { MessageType } from './types';
+// Define the message types locally since they aren't all in the enum anymore
+const MessageTypes = {
+  SAVE_ARTICLE: 'SAVE_ARTICLE',
+  SHOW_FEEDBACK: 'SHOW_FEEDBACK',
+  SAVE_HIGHLIGHT: 'SAVE_HIGHLIGHT' // Keep this for backward compatibility
+};
 
 // Create floating button element
 const floatingButton = document.createElement('button');
@@ -21,7 +26,8 @@ document.body.appendChild(floatingButton);
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === MessageType.SAVE_HIGHLIGHT) {
+  // Support legacy message type for backward compatibility
+  if (message.type === MessageTypes.SAVE_HIGHLIGHT) {
     const selection = window.getSelection();
     if (selection && selection.toString().trim() !== '') {
       sendResponse({
@@ -38,7 +44,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   // Handle feedback messages from the background script
-  if (message.type === MessageType.SHOW_FEEDBACK) {
+  if (message.type === MessageTypes.SHOW_FEEDBACK) {
     showFeedback(message.message, !message.success);
     return true;
   }
@@ -89,7 +95,7 @@ floatingButton.addEventListener('click', () => {
     // Send message to background script to save the article with highlight
     chrome.runtime.sendMessage(
       {
-        type: MessageType.SAVE_ARTICLE,
+        type: MessageTypes.SAVE_ARTICLE,
         payload: {
           title: currentTitle,
           url: currentUrl,
