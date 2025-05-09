@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Article Saver",
   "version": "1.0.0",
-  "description": "Save articles for later reading",
+  "description": "Save articles and highlighted text for later reading",
   "permissions": [
     "activeTab",
     "storage"
@@ -13,6 +13,12 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

@@ -3,13 +3,15 @@ export interface Article {
   title: string;
   url: string;
   date: string;
+  highlight?: string;
 }
 
 export enum MessageType {
   SAVE_ARTICLE = 'SAVE_ARTICLE',
   GET_ARTICLES = 'GET_ARTICLES',
   GET_ARTICLES_RESPONSE = 'GET_ARTICLES_RESPONSE',
-  DELETE_ARTICLE = 'DELETE_ARTICLE'
+  DELETE_ARTICLE = 'DELETE_ARTICLE',
+  SAVE_HIGHLIGHT = 'SAVE_HIGHLIGHT'
 }
 
 export interface Message {

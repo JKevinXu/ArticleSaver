@@ -2,7 +2,15 @@ import { MessageType, Article } from './types';
 
 // DOM Elements
 const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
+const saveHighlightBtn = document.getElementById('saveHighlightBtn') as HTMLButtonElement;
+const confirmHighlightBtn = document.getElementById('confirmHighlightBtn') as HTMLButtonElement;
+const cancelHighlightBtn = document.getElementById('cancelHighlightBtn') as HTMLButtonElement;
+const highlightContainer = document.getElementById('highlightContainer') as HTMLDivElement;
+const highlightText = document.getElementById('highlightText') as HTMLDivElement;
 const articleList = document.getElementById('articleList') as HTMLDivElement;
+
+// Current state
+let currentHighlight: string = '';
 
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Set up event listeners
   saveBtn.addEventListener('click', handleSaveCurrentPage);
+  saveHighlightBtn.addEventListener('click', handleSaveHighlight);
+  confirmHighlightBtn.addEventListener('click', handleConfirmHighlight);
+  cancelHighlightBtn.addEventListener('click', handleCancelHighlight);
 });
 
 /**
@@ -53,6 +64,92 @@ async function handleSaveCurrentPage() {
     showError('An error occurred while saving');
     console.error(error);
   }
+}
+
+/**
+ * Handle initiating the text highlight saving process
+ */
+function handleSaveHighlight() {
+  try {
+    chrome.runtime.sendMessage(
+      { type: MessageType.SAVE_HIGHLIGHT },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          showError('Failed to communicate with the page');
+          return;
+        }
+        
+        if (response && response.success) {
+          currentHighlight = response.highlight;
+          highlightText.textContent = currentHighlight;
+          highlightContainer.classList.remove('hidden');
+        } else {
+          showError(response?.error || 'No text is highlighted');
+        }
+      }
+    );
+  } catch (error) {
+    showError('An error occurred while getting highlighted text');
+    console.error(error);
+  }
+}
+
+/**
+ * Handle confirming and saving the highlighted text
+ */
+function handleConfirmHighlight() {
+  if (!currentHighlight) {
+    showError('No text is highlighted');
+    return;
+  }
+  
+  try {
+    // Get current tab info
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        const currentTab = tabs[0];
+        const articleData = {
+          title: currentTab.title || 'Untitled Page',
+          url: currentTab.url || '',
+          highlight: currentHighlight
+        };
+        
+        // Send message to background script to save the article with highlight
+        chrome.runtime.sendMessage(
+          {
+            type: MessageType.SAVE_ARTICLE,
+            payload: articleData
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              showError('Failed to save highlight');
+              return;
+            }
+            
+            if (response && response.success) {
+              showNotification('Highlight saved successfully');
+              highlightContainer.classList.add('hidden');
+              currentHighlight = '';
+              loadSavedArticles(); // Refresh the list
+            } else {
+              showError('Failed to save highlight');
+            }
+          }
+        );
+      }
+    });
+  } catch (error) {
+    showError('An error occurred while saving highlight');
+    console.error(error);
+  }
+}
+
+/**
+ * Handle canceling the highlight saving process
+ */
+function handleCancelHighlight() {
+  highlightContainer.classList.add('hidden');
+  currentHighlight = '';
 }
 
 /**
@@ -127,6 +224,18 @@ function displayArticles(articles: Article[]) {
     articleDate.className = 'article-date';
     articleDate.textContent = article.date;
     
+    articleItem.appendChild(articleTitle);
+    articleItem.appendChild(articleUrl);
+    articleItem.appendChild(articleDate);
+    
+    // If there's a highlight, display it
+    if (article.highlight) {
+      const highlight = document.createElement('div');
+      highlight.className = 'article-highlight';
+      highlight.textContent = `"${article.highlight}"`;
+      articleItem.appendChild(highlight);
+    }
+    
     const articleActions = document.createElement('div');
     articleActions.className = 'article-actions';
     
@@ -140,9 +249,6 @@ function displayArticles(articles: Article[]) {
     });
     
     articleActions.appendChild(deleteButton);
-    articleItem.appendChild(articleTitle);
-    articleItem.appendChild(articleUrl);
-    articleItem.appendChild(articleDate);
     articleItem.appendChild(articleActions);
     
     // When clicking on an article, open it in a new tab

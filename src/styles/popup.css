@@ -144,4 +144,37 @@ h2 {
 
 .hidden {
   display: none;
+}
+
+.highlight-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.highlight-text {
+  margin: 10px 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #4285f4;
+  border-radius: 4px;
+  font-style: italic;
+  line-height: 1.5;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.article-highlight {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #4285f4;
+  border-radius: 4px;
+  font-style: italic;
+  line-height: 1.5;
+  font-size: 13px;
+  color: #444;
+  overflow-wrap: break-word;
 } 

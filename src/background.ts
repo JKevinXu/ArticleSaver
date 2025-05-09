@@ -9,7 +9,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       id: generateId(),
       title: articleData.title,
       url: articleData.url,
-      date: formatDate(new Date())
+      date: formatDate(new Date()),
+      highlight: articleData.highlight || ''
     };
     
     saveArticle(newArticle)
@@ -20,6 +21,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.error('Error saving article:', error);
         sendResponse({ success: false, error });
       });
+    
+    return true; // Will respond asynchronously
+  }
+  
+  if (message.type === MessageType.SAVE_HIGHLIGHT) {
+    // Get active tab to capture the highlight
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { type: MessageType.SAVE_HIGHLIGHT },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              sendResponse({ 
+                success: false, 
+                error: 'Failed to communicate with the page' 
+              });
+              return;
+            }
+            
+            if (response && response.success) {
+              sendResponse({
+                success: true,
+                highlight: response.highlight
+              });
+            } else {
+              sendResponse({
+                success: false,
+                error: response?.error || 'Unknown error'
+              });
+            }
+          }
+        );
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: 'No active tab found' 
+        });
+      }
+    });
     
     return true; // Will respond asynchronously
   }
