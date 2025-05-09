@@ -1,0 +1,147 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 350px;
+  min-height: 300px;
+  padding: 15px;
+  background-color: #f8f9fa;
+}
+
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+h1 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+h2 {
+  font-size: 16px;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.primary {
+  background-color: #4285f4;
+  color: white;
+}
+
+.primary:hover {
+  background-color: #3367d6;
+}
+
+.secondary {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.secondary:hover {
+  background-color: #e8eaed;
+}
+
+.article-list {
+  margin-top: 10px;
+}
+
+#articleList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.article-item {
+  background-color: white;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  position: relative;
+}
+
+.article-item:hover {
+  background-color: #f1f3f4;
+}
+
+.article-title {
+  font-weight: 500;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.article-url {
+  font-size: 12px;
+  color: #4285f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.article-date {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.article-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+}
+
+.article-item:hover .article-actions {
+  display: block;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #d93025;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.delete-btn:hover {
+  color: #a50e0e;
+}
+
+.empty-message {
+  text-align: center;
+  color: #5f6368;
+  padding: 20px 0;
+}
+
+.hidden {
+  display: none;
+} 
