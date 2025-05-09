@@ -131,8 +131,29 @@ function displayArticles(articles: Article[]) {
     articleItem.appendChild(articleUrl);
     articleItem.appendChild(articleDate);
     
-    // If there's a highlight, display it
-    if (article.highlight) {
+    // Display highlights section
+    if (article.highlights && article.highlights.length > 0) {
+      // Display multiple highlights
+      const highlightsContainer = document.createElement('div');
+      highlightsContainer.className = 'highlights-container';
+      
+      if (article.highlights.length > 1) {
+        const highlightCount = document.createElement('div');
+        highlightCount.className = 'highlight-count';
+        highlightCount.textContent = `${article.highlights.length} Highlights`;
+        highlightsContainer.appendChild(highlightCount);
+      }
+      
+      article.highlights.forEach(highlight => {
+        const highlightEl = document.createElement('div');
+        highlightEl.className = 'article-highlight';
+        highlightEl.textContent = `"${highlight}"`;
+        highlightsContainer.appendChild(highlightEl);
+      });
+      
+      articleItem.appendChild(highlightsContainer);
+    } else if (article.highlight) {
+      // For backward compatibility - display single highlight
       const highlight = document.createElement('div');
       highlight.className = 'article-highlight';
       highlight.textContent = `"${article.highlight}"`;

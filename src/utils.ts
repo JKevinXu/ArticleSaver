@@ -64,12 +64,52 @@ export const extractArticleContent = (): string => {
 
 /**
  * Store an article in Chrome storage
+ * If an article with the same URL already exists, add the highlight to it
  */
 export const saveArticle = async (article: Article): Promise<void> => {
   const { articles = [] } = await chrome.storage.local.get('articles') as { articles: Article[] };
-  const updatedArticles = [article, ...articles];
   
-  await chrome.storage.local.set({ articles: updatedArticles });
+  // Check if an article with the same URL already exists
+  const existingArticleIndex = articles.findIndex(a => a.url === article.url);
+  
+  if (existingArticleIndex !== -1 && article.highlight) {
+    // Article exists and we have a highlight to add
+    const existingArticle = articles[existingArticleIndex];
+    
+    // Convert existing highlights to an array if it's a string
+    let highlights: string[] = [];
+    if (existingArticle.highlights) {
+      highlights = [...existingArticle.highlights];
+    } else if (existingArticle.highlight) {
+      highlights = [existingArticle.highlight];
+    }
+    
+    // Add the new highlight if it doesn't already exist
+    if (article.highlight && !highlights.includes(article.highlight)) {
+      highlights.push(article.highlight);
+    }
+    
+    // Update the existing article with the new highlights
+    articles[existingArticleIndex] = {
+      ...existingArticle,
+      highlights: highlights,
+      // Update the date to show it was recently modified
+      date: formatDate(new Date())
+    };
+    
+    await chrome.storage.local.set({ articles: articles });
+  } else {
+    // Article doesn't exist or no highlight to add
+    let newArticle = {...article};
+    
+    // Convert single highlight to highlights array if exists
+    if (article.highlight) {
+      newArticle.highlights = [article.highlight];
+    }
+    
+    const updatedArticles = [newArticle, ...articles.filter(a => a.url !== article.url)];
+    await chrome.storage.local.set({ articles: updatedArticles });
+  }
 };
 
 /**

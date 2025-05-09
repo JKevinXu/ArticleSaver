@@ -1,11 +1,11 @@
 import { MessageType, Article } from './types';
 import { generateId, formatDate, saveArticle, getSavedArticles, deleteArticle } from './utils';
 
-// Create context menu items
+// Create context menu items with better icon and title
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'save-highlight',
-    title: 'Save Highlight',
+    title: 'Save "%s" to Article Saver',
     contexts: ['selection']
   });
 });

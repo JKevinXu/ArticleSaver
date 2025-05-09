@@ -4,6 +4,7 @@ export interface Article {
   url: string;
   date: string;
   highlight?: string;
+  highlights?: string[];
 }
 
 export enum MessageType {
