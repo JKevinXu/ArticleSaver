@@ -97,6 +97,13 @@ export const saveArticle = async (article: Article): Promise<void> => {
       date: formatDate(new Date())
     };
     
+    // Sort articles by date (newest first)
+    articles.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
     await chrome.storage.local.set({ articles: articles });
   } else {
     // Article doesn't exist or no highlight to add
@@ -108,6 +115,14 @@ export const saveArticle = async (article: Article): Promise<void> => {
     }
     
     const updatedArticles = [newArticle, ...articles.filter(a => a.url !== article.url)];
+    
+    // Sort articles by date (newest first)
+    updatedArticles.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
     await chrome.storage.local.set({ articles: updatedArticles });
   }
 };
@@ -117,7 +132,13 @@ export const saveArticle = async (article: Article): Promise<void> => {
  */
 export const getSavedArticles = async (): Promise<Article[]> => {
   const { articles = [] } = await chrome.storage.local.get('articles') as { articles: Article[] };
-  return articles;
+  
+  // Sort articles by date (newest first)
+  return articles.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return dateB.getTime() - dateA.getTime();
+  });
 };
 
 /**

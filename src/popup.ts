@@ -3,7 +3,9 @@ import { MessageType, Article } from './types';
 // DOM Elements
 const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
 const articleList = document.getElementById('articleList') as HTMLDivElement;
-const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
+const exportBtn = document.getElementById('exportBtn') as HTMLAnchorElement;
+const importBtn = document.getElementById('importBtn') as HTMLAnchorElement;
+const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,7 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Set up event listeners
   saveBtn.addEventListener('click', handleSaveCurrentPage);
+  
+  // Export/Import functionality
   exportBtn?.addEventListener('click', handleExportArticles);
+  importBtn?.addEventListener('click', () => fileInput.click());
+  fileInput?.addEventListener('change', handleImportArticles);
 });
 
 /**
@@ -207,7 +213,9 @@ function showNotification(message: string) {
 /**
  * Export all saved articles as a JSON file
  */
-function handleExportArticles() {
+function handleExportArticles(e: MouseEvent) {
+  e.preventDefault();
+  
   chrome.runtime.sendMessage(
     { type: MessageType.GET_ARTICLES },
     (response) => {
@@ -243,6 +251,86 @@ function handleExportArticles() {
         URL.revokeObjectURL(downloadLink.href);
         
         showNotification('Articles exported successfully');
+      }
+    }
+  );
+}
+
+/**
+ * Import articles from a JSON file
+ */
+function handleImportArticles(event: Event) {
+  const fileInput = event.target as HTMLInputElement;
+  const file = fileInput.files?.[0];
+  
+  if (!file) {
+    showError('No file selected');
+    return;
+  }
+  
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    try {
+      const content = e.target?.result as string;
+      const articles = JSON.parse(content) as Article[];
+      
+      // Validate the imported data
+      if (!Array.isArray(articles)) {
+        showError('Invalid format: Import file must contain an array of articles');
+        return;
+      }
+      
+      // Validate that each article has required fields
+      const validArticles = articles.filter(article => 
+        article && typeof article === 'object' && 
+        article.id && article.title && article.url && article.date);
+      
+      if (validArticles.length === 0) {
+        showError('No valid articles found in import file');
+        return;
+      }
+      
+      // Import the articles
+      importArticles(validArticles);
+    } catch (error) {
+      showError('Failed to parse import file');
+      console.error(error);
+    }
+    
+    // Reset the file input
+    fileInput.value = '';
+  };
+  
+  reader.onerror = () => {
+    showError('Failed to read import file');
+    // Reset the file input
+    fileInput.value = '';
+  };
+  
+  reader.readAsText(file);
+}
+
+/**
+ * Import articles to storage
+ */
+function importArticles(articles: Article[]) {
+  chrome.runtime.sendMessage(
+    {
+      type: MessageType.IMPORT_ARTICLES,
+      payload: articles
+    },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        showError('Failed to import articles');
+        return;
+      }
+      
+      if (response && response.success) {
+        showNotification(`Successfully imported ${articles.length} articles`);
+        loadSavedArticles(); // Refresh the list
+      } else {
+        showError('Failed to import articles');
       }
     }
   );

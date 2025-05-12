@@ -195,4 +195,48 @@ h2 {
   border-radius: 12px;
   display: inline-block;
   margin-bottom: 4px;
+}
+
+/* Dropdown styles */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dropdown-content a {
+  color: #202124;
+  padding: 10px 12px;
+  text-decoration: none;
+  display: block;
+  font-size: 14px;
+}
+
+.dropdown-content a:hover {
+  background-color: #f1f3f4;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* Show dropdown on focus for accessibility */
+.dropdown:focus-within .dropdown-content {
+  display: block;
+}
+
+/* File input styles */
+#fileInput {
+  display: none;
 } 
