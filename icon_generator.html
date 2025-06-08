@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator for Article Summarizer</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-preview { margin: 10px; display: inline-block; }
+        canvas { border: 1px solid #ccc; margin: 5px; }
+        .download-section { margin-top: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Article Summarizer Icon Generator</h1>
+    
+    <div id="icons"></div>
+    
+    <div class="download-section">
+        <button onclick="downloadIcons()">Download All Icons</button>
+    </div>
+
+    <script>
+        function createArticleIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background circle with gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4285F4');
+            gradient.addColorStop(1, '#2563EB');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2 - 1, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Add a subtle shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.2)';
+            ctx.shadowBlur = size / 20;
+            ctx.shadowOffsetY = size / 40;
+            
+            // Document shape
+            const docWidth = size * 0.5;
+            const docHeight = size * 0.6;
+            const docX = (size - docWidth) / 2;
+            const docY = (size - docHeight) / 2;
+            
+            // Document background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(docX, docY, docWidth, docHeight);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Document fold (top-right corner)
+            const foldSize = size * 0.1;
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.moveTo(docX + docWidth - foldSize, docY);
+            ctx.lineTo(docX + docWidth, docY + foldSize);
+            ctx.lineTo(docX + docWidth, docY);
+            ctx.fill();
+            
+            // Document lines (representing text)
+            ctx.fillStyle = '#666';
+            const lineHeight = size * 0.04;
+            const lineMargin = size * 0.08;
+            
+            // Title line (thicker)
+            ctx.fillRect(docX + lineMargin, docY + lineMargin, docWidth * 0.7, lineHeight);
+            
+            // Content lines
+            for (let i = 0; i < 3; i++) {
+                const lineY = docY + lineMargin * 2 + lineHeight * 2 + (i * lineHeight * 1.8);
+                const lineWidth = i === 2 ? docWidth * 0.5 : docWidth * 0.8;
+                ctx.fillRect(docX + lineMargin, lineY, lineWidth - lineMargin * 2, lineHeight * 0.6);
+            }
+            
+            // Add a small highlight/summary indicator
+            ctx.fillStyle = '#FFA500';
+            ctx.fillRect(docX + lineMargin, docY + docHeight - lineMargin - lineHeight, docWidth * 0.3, lineHeight);
+            
+            return canvas;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function downloadIcons() {
+            const sizes = [16, 48, 128];
+            sizes.forEach(size => {
+                const canvas = createArticleIcon(size);
+                downloadCanvas(canvas, `icon${size}.png`);
+            });
+        }
+
+        // Generate and display icons
+        function generateIcons() {
+            const iconsContainer = document.getElementById('icons');
+            const sizes = [16, 48, 128];
+            
+            sizes.forEach(size => {
+                const canvas = createArticleIcon(size);
+                const preview = document.createElement('div');
+                preview.className = 'icon-preview';
+                preview.innerHTML = `<h3>Icon ${size}x${size}</h3>`;
+                preview.appendChild(canvas);
+                iconsContainer.appendChild(preview);
+            });
+        }
+
+        // Generate icons on page load
+        generateIcons();
+    </script>
+</body>
+</html> 
