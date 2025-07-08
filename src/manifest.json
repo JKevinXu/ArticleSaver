@@ -10,7 +10,8 @@
   ],
   "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "https://api.github.com/*"
   ],
   "background": {
     "service_worker": "background.js"

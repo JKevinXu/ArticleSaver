@@ -1,11 +1,22 @@
-import { MessageType, Article } from './types';
+import { MessageType, Article, GitHubConfig } from './types';
 
 // DOM Elements
 const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
 const articleList = document.getElementById('articleList') as HTMLDivElement;
 const exportBtn = document.getElementById('exportBtn') as HTMLAnchorElement;
 const importBtn = document.getElementById('importBtn') as HTMLAnchorElement;
+const syncBtn = document.getElementById('syncBtn') as HTMLAnchorElement;
+const configBtn = document.getElementById('configBtn') as HTMLAnchorElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+
+// Modal elements
+const configModal = document.getElementById('configModal') as HTMLDivElement;
+const closeModal = document.getElementById('closeModal') as HTMLSpanElement;
+const githubTokenInput = document.getElementById('githubToken') as HTMLInputElement;
+const githubRepoInput = document.getElementById('githubRepo') as HTMLInputElement;
+const githubPathInput = document.getElementById('githubPath') as HTMLInputElement;
+const saveConfigBtn = document.getElementById('saveConfigBtn') as HTMLButtonElement;
+const cancelConfigBtn = document.getElementById('cancelConfigBtn') as HTMLButtonElement;
 
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +30,25 @@ document.addEventListener('DOMContentLoaded', () => {
   exportBtn?.addEventListener('click', handleExportArticles);
   importBtn?.addEventListener('click', () => fileInput.click());
   fileInput?.addEventListener('change', handleImportArticles);
+  
+  // GitHub sync functionality
+  syncBtn?.addEventListener('click', handleSyncToGitHub);
+  configBtn?.addEventListener('click', openConfigModal);
+  
+  // Modal functionality
+  closeModal?.addEventListener('click', closeConfigModal);
+  cancelConfigBtn?.addEventListener('click', closeConfigModal);
+  saveConfigBtn?.addEventListener('click', handleSaveConfig);
+  
+  // Close modal when clicking outside
+  configModal?.addEventListener('click', (e) => {
+    if (e.target === configModal) {
+      closeConfigModal();
+    }
+  });
+  
+  // Load GitHub configuration
+  loadGitHubConfig();
 });
 
 /**
@@ -348,4 +378,181 @@ function formatDateForFilename(date: Date): string {
   const seconds = String(date.getSeconds()).padStart(2, '0');
   
   return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+}
+
+/**
+ * Open the GitHub configuration modal
+ */
+function openConfigModal() {
+  if (configModal) {
+    configModal.style.display = 'flex';
+  }
+}
+
+/**
+ * Close the GitHub configuration modal
+ */
+function closeConfigModal() {
+  if (configModal) {
+    configModal.style.display = 'none';
+  }
+}
+
+/**
+ * Load GitHub configuration from storage
+ */
+function loadGitHubConfig() {
+  chrome.runtime.sendMessage(
+    { type: MessageType.GET_GITHUB_CONFIG },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Failed to load GitHub config:', chrome.runtime.lastError);
+        return;
+      }
+      
+      if (response && response.type === MessageType.GET_GITHUB_CONFIG_RESPONSE) {
+        const config = response.payload as GitHubConfig;
+        if (config) {
+          githubTokenInput.value = config.token || '';
+          githubRepoInput.value = config.repo || 'JKevinXu/github-blog';
+          githubPathInput.value = config.path || '_data/readings.json';
+        }
+      }
+    }
+  );
+}
+
+/**
+ * Save GitHub configuration
+ */
+function handleSaveConfig() {
+  const config: GitHubConfig = {
+    token: githubTokenInput.value.trim(),
+    repo: githubRepoInput.value.trim(),
+    path: githubPathInput.value.trim()
+  };
+  
+  if (!config.token || !config.repo || !config.path) {
+    showError('Please fill in all fields');
+    return;
+  }
+  
+  chrome.runtime.sendMessage(
+    {
+      type: MessageType.SAVE_GITHUB_CONFIG,
+      payload: config
+    },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        showError('Failed to save configuration');
+        return;
+      }
+      
+      if (response && response.success) {
+        showNotification('Configuration saved successfully');
+        closeConfigModal();
+      } else {
+        showError('Failed to save configuration');
+      }
+    }
+  );
+}
+
+/**
+ * Handle syncing articles to GitHub
+ */
+function handleSyncToGitHub() {
+  // First, get the current articles
+  chrome.runtime.sendMessage(
+    { type: MessageType.GET_ARTICLES },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        showError('Failed to get articles for sync');
+        return;
+      }
+      
+      if (response && response.type === MessageType.GET_ARTICLES_RESPONSE) {
+        const articles = response.payload as Article[];
+        
+        if (!articles || articles.length === 0) {
+          showError('No articles to sync');
+          return;
+        }
+        
+        // Get GitHub configuration
+        chrome.runtime.sendMessage(
+          { type: MessageType.GET_GITHUB_CONFIG },
+          (configResponse) => {
+            if (chrome.runtime.lastError) {
+              showError('Failed to get GitHub configuration');
+              return;
+            }
+            
+            if (configResponse && configResponse.type === MessageType.GET_GITHUB_CONFIG_RESPONSE) {
+              const config = configResponse.payload as GitHubConfig;
+              
+              if (!config || !config.token || !config.repo || !config.path) {
+                showError('GitHub configuration not found. Please configure GitHub settings first.');
+                return;
+              }
+              
+              // Show loading state
+              showSyncStatus('Syncing to GitHub...', 'loading');
+              
+              // Perform the sync
+              chrome.runtime.sendMessage(
+                {
+                  type: MessageType.SYNC_TO_GITHUB,
+                  payload: { articles, config }
+                },
+                (syncResponse) => {
+                  if (chrome.runtime.lastError) {
+                    showSyncStatus('Sync failed: ' + chrome.runtime.lastError.message, 'error');
+                    return;
+                  }
+                  
+                  if (syncResponse && syncResponse.success) {
+                    showSyncStatus('Successfully synced to GitHub!', 'success');
+                  } else {
+                    showSyncStatus('Sync failed: ' + (syncResponse?.error || 'Unknown error'), 'error');
+                  }
+                }
+              );
+            } else {
+              showError('GitHub configuration not found. Please configure GitHub settings first.');
+            }
+          }
+        );
+      }
+    }
+  );
+}
+
+/**
+ * Show sync status message
+ */
+function showSyncStatus(message: string, type: 'success' | 'error' | 'loading') {
+  // Remove any existing status
+  const existingStatus = document.querySelector('.sync-status');
+  if (existingStatus) {
+    existingStatus.remove();
+  }
+  
+  // Create new status element
+  const statusEl = document.createElement('div');
+  statusEl.className = `sync-status ${type}`;
+  statusEl.textContent = message;
+  
+  // Add to container
+  const container = document.querySelector('.container');
+  if (container) {
+    container.appendChild(statusEl);
+    
+    // Auto-remove after 5 seconds for success/error messages
+    if (type !== 'loading') {
+      setTimeout(() => {
+        statusEl.remove();
+      }, 5000);
+    }
+  }
 } 

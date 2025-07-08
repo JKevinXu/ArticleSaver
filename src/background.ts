@@ -1,4 +1,4 @@
-import { MessageType, Article } from './types';
+import { MessageType, Article, GitHubConfig } from './types';
 import { generateId, formatDate, saveArticle, getSavedArticles, deleteArticle } from './utils';
 
 // Create context menu items with better icon and title
@@ -144,6 +144,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     return true; // Will respond asynchronously
   }
+  
+  if (message.type === MessageType.SAVE_GITHUB_CONFIG) {
+    const config = message.payload as GitHubConfig;
+    
+    chrome.storage.local.set({ githubConfig: config })
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        console.error('Error saving GitHub config:', error);
+        sendResponse({ success: false, error });
+      });
+    
+    return true; // Will respond asynchronously
+  }
+  
+  if (message.type === MessageType.GET_GITHUB_CONFIG) {
+    chrome.storage.local.get(['githubConfig'])
+      .then((result) => {
+        sendResponse({
+          type: MessageType.GET_GITHUB_CONFIG_RESPONSE,
+          payload: result.githubConfig || null
+        });
+      })
+      .catch((error) => {
+        console.error('Error getting GitHub config:', error);
+        sendResponse({
+          type: MessageType.GET_GITHUB_CONFIG_RESPONSE,
+          payload: null
+        });
+      });
+    
+    return true; // Will respond asynchronously
+  }
+  
+  if (message.type === MessageType.SYNC_TO_GITHUB) {
+    const { articles, config } = message.payload;
+    
+    syncToGitHub(articles, config)
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        console.error('Error syncing to GitHub:', error);
+        sendResponse({ 
+          success: false, 
+          error: error.message || 'Unknown error occurred' 
+        });
+      });
+    
+    return true; // Will respond asynchronously
+  }
 });
 
 /**
@@ -157,5 +209,70 @@ function parseDateString(dateStr: string): Date {
     // If parsing fails, return current date as fallback
     console.error('Failed to parse date:', dateStr);
     return new Date();
+  }
+}
+
+/**
+ * Sync articles to GitHub repository
+ */
+async function syncToGitHub(articles: Article[], config: GitHubConfig): Promise<void> {
+  try {
+    // Transform articles to match the expected format for readings.json
+    const readingsData = articles.map(article => ({
+      title: article.title,
+      url: article.url,
+      date: article.date,
+      ...(article.highlight && { highlight: article.highlight }),
+      ...(article.highlights && { highlights: article.highlights })
+    }));
+    
+    // Get the current file content to get the SHA
+    const getCurrentFileResponse = await fetch(
+      `https://api.github.com/repos/${config.repo}/contents/${config.path}`,
+      {
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        }
+      }
+    );
+    
+    let sha: string | undefined;
+    if (getCurrentFileResponse.ok) {
+      const fileData = await getCurrentFileResponse.json();
+      sha = fileData.sha;
+    }
+    
+    // Create the file content
+    const content = JSON.stringify(readingsData, null, 2);
+    const encodedContent = btoa(unescape(encodeURIComponent(content)));
+    
+    // Update the file
+    const updateResponse = await fetch(
+      `https://api.github.com/repos/${config.repo}/contents/${config.path}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Update readings.json with ${articles.length} articles`,
+          content: encodedContent,
+          ...(sha && { sha })
+        })
+      }
+    );
+    
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json();
+      throw new Error(`GitHub API error: ${errorData.message || 'Unknown error'}`);
+    }
+    
+    console.log('Successfully synced articles to GitHub');
+  } catch (error) {
+    console.error('Error syncing to GitHub:', error);
+    throw error;
   }
 } 

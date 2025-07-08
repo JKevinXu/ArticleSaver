@@ -13,7 +13,11 @@ export enum MessageType {
   GET_ARTICLES_RESPONSE = 'GET_ARTICLES_RESPONSE',
   DELETE_ARTICLE = 'DELETE_ARTICLE',
   SHOW_FEEDBACK = 'SHOW_FEEDBACK',
-  IMPORT_ARTICLES = 'IMPORT_ARTICLES'
+  IMPORT_ARTICLES = 'IMPORT_ARTICLES',
+  SYNC_TO_GITHUB = 'SYNC_TO_GITHUB',
+  SAVE_GITHUB_CONFIG = 'SAVE_GITHUB_CONFIG',
+  GET_GITHUB_CONFIG = 'GET_GITHUB_CONFIG',
+  GET_GITHUB_CONFIG_RESPONSE = 'GET_GITHUB_CONFIG_RESPONSE'
 }
 
 export interface Message {
@@ -30,4 +34,15 @@ export interface SummarizeRequest {
 export interface SummarizeResponse {
   summary: string;
   error?: string;
+}
+
+export interface GitHubConfig {
+  token: string;
+  repo: string;
+  path: string;
+}
+
+export interface SyncToGitHubRequest {
+  articles: Article[];
+  config: GitHubConfig;
 } 

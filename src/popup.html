@@ -16,6 +16,8 @@
         <div class="dropdown-content">
           <a href="#" id="exportBtn">Export to JSON</a>
           <a href="#" id="importBtn">Import from JSON</a>
+          <a href="#" id="syncBtn">Sync to GitHub</a>
+          <a href="#" id="configBtn">GitHub Settings</a>
         </div>
       </div>
     </div>
@@ -28,6 +30,36 @@
   
   <!-- Hidden file input for importing -->
   <input type="file" id="fileInput" accept=".json" style="display: none;">
+  
+  <!-- GitHub Configuration Modal -->
+  <div id="configModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>GitHub Configuration</h2>
+      <p>To sync articles to GitHub, you need to provide your GitHub credentials:</p>
+      
+      <div class="form-group">
+        <label for="githubToken">GitHub Personal Access Token:</label>
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <small>Create a token at: <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings</a></small>
+      </div>
+      
+      <div class="form-group">
+        <label for="githubRepo">Repository (owner/repo):</label>
+        <input type="text" id="githubRepo" placeholder="JKevinXu/github-blog" value="JKevinXu/github-blog">
+      </div>
+      
+      <div class="form-group">
+        <label for="githubPath">File Path:</label>
+        <input type="text" id="githubPath" placeholder="_data/readings.json" value="_data/readings.json">
+      </div>
+      
+      <div class="form-actions">
+        <button id="saveConfigBtn" class="btn primary">Save Configuration</button>
+        <button id="cancelConfigBtn" class="btn secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
   
   <script src="popup.js"></script>
 </body>
